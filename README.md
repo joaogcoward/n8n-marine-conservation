@@ -7,7 +7,7 @@ This is a **30-day challenge** where I design and share automation workflows wit
 
 ## 📌 How it works
 - Each day I publish a new workflow.
-- Workflows are documented in my Notion portfolio: n8n Problem-Solving for Marine Conservation.
+- Workflows are documented in my Notion portfolio: [n8n Problem-Solving for Marine Conservation] (https://pointed-humor-a2b.notion.site/n8n-Problem-Solving-for-Marine-Conservation-256dbac1bda680e58482dda66725f87a).
 - All workflows are open-source and free for NGOs, scientists, and citizen projects.
 
 ## 📅 Challenge Progress
@@ -16,4 +16,4 @@ Day 2 → [Workflow name]
 ... (will update daily)
 
 ## 🤝 Collaboration
-If you are a marine NGO, researcher, or explorer and would like to use or co-create workflows, please reach out via [LinkedIn](your LinkedIn link).
+If you are a marine NGO, researcher, or explorer and would like to use or co-create workflows, please reach out via [LinkedIn](https://www.linkedin.com/in/joaogudicow/).
