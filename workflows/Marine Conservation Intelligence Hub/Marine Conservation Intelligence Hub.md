@@ -19,4 +19,4 @@ The project was built with a focus on robustness, scalability, and ease of maint
 * **100% Automation:** Eliminated manual searching, filtering, and reporting, saving significant time.
 * **Data Integrity:** The `Remove Duplicates` functionality ensures the team only sees fresh, non-redundant content.
 * **Reliable Reporting:** The workflow's robust error handling means there are no silent failures. The team is always informed, whether new articles are found or not.
-* **Proof of Concept:** This project is a tangible demonstration of how automation can support a core mission—in this case, empowering a team with continuous, clean, and reliable data.
+* **Proof of Concept:** This project is a tangible demonstration of how automation can support a core mission, in this case, empowering a team with continuous, clean, and reliable data.
