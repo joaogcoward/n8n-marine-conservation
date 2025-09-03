@@ -20,3 +20,7 @@ The project was built with a focus on robustness, scalability, and ease of maint
 * **Data Integrity:** The `Remove Duplicates` functionality ensures the team only sees fresh, non-redundant content.
 * **Reliable Reporting:** The workflow's robust error handling means there are no silent failures. The team is always informed, whether new articles are found or not.
 * **Proof of Concept:** This project is a tangible demonstration of how automation can support a core mission, in this case, empowering a team with continuous, clean, and reliable data.
+
+### **Scalability 📈**
+
+The modular design allows for seamless upgrades. To scale, the workflow could be integrated with a database (e.g., PostgreSQL) for long-term data retention and analysis. Google Vertex AI could be further leveraged to dynamically normalize new data sources, removing the need for manual code updates. This architecture provides a solid foundation for a more comprehensive and robust data pipeline.
