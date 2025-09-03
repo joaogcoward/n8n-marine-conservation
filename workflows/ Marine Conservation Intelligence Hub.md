@@ -1,4 +1,4 @@
-### **The Problem 😫**
+### **The Problem 📣**
 
 Staying informed about environmental news is crucial for mission-driven organizations, but manually tracking multiple sources, filtering for relevance, and sharing consistent updates is time-consuming and prone to human error. This repetitive process drains valuable time that could be spent on deeper analysis and strategy.
 
