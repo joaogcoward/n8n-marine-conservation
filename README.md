@@ -10,9 +10,9 @@ This is a open source project where I design and share automation workflows with
 - Workflows are documented in my Notion portfolio: [n8n Problem-Solving for Marine Conservation](https://pointed-humor-a2b.notion.site/n8n-Problem-Solving-for-Marine-Conservation-256dbac1bda680e58482dda66725f87a).
 - All workflows are open-source and free for NGOs, scientists, and citizen projects.
 
-## 📅 Challenge Progress
-Day 1 → [Workflow name]  
-Day 2 → [Workflow name]  
+## 🚀 Workflows
+[Marine Conservation Intelligence Hub](https://github.com/joaogcoward/n8n-marine-conservation/blob/main/workflows/Marine%20Conservation%20Intelligence%20Hub.json) [Read more here](https://github.com/joaogcoward/n8n-marine-conservation/blob/main/workflows/%20Marine%20Conservation%20Intelligence%20Hub.md)  
+
 
 
 ## 🤝 Collaboration
