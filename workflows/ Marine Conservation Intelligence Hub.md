@@ -23,4 +23,4 @@ The project was built with a focus on robustness, scalability, and ease of maint
 
 ### **Scalability 📈**
 
-The modular design allows for seamless upgrades. To scale, the workflow could be integrated with a database (e.g., PostgreSQL) for long-term data retention and analysis. Google Vertex AI could be further leveraged to dynamically normalize new data sources, removing the need for manual code updates. This architecture provides a solid foundation for a more comprehensive and robust data pipeline.
+The modular design allows for seamless upgrades. To scale, the workflow could be integrated with a database for long-term data retention and analysis. Google Vertex AI could be further leveraged to dynamically normalize new data sources, removing the need for manual code updates. This architecture provides a solid foundation for a more comprehensive and robust data pipeline.
