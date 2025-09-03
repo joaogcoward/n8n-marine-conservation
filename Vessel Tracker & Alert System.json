@@ -1,0 +1,480 @@
+{
+  "name": "Vessel Tracker & Alert System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "85ffeef7-c116-4c02-8be8-a8f4748debbb",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -208,
+        0
+      ],
+      "id": "ee85ebf3-da82-4cdd-aa4a-8e91e3fc1e92",
+      "name": "Webhook",
+      "webhookId": "85ffeef7-c116-4c02-8be8-a8f4748debbb"
+    },
+    {
+      "parameters": {
+        "projectId": {
+          "__rl": true,
+          "value": "gen-lang-client-0563035104",
+          "mode": "list",
+          "cachedResultName": "Gemini API"
+        },
+        "modelName": "gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleVertex",
+      "typeVersion": 1,
+      "position": [
+        208,
+        240
+      ],
+      "id": "734a4c98-184b-44fe-bc44-3ba6b274c062",
+      "name": "Google Vertex Chat Model",
+      "credentials": {
+        "googleApi": {
+          "id": "GLJnxUhspkFiUw5v",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "This tool searches the Global Fishing Watch database for vessel information using an MMSI.",
+        "url": "https://gateway.api.globalfishingwatch.org/v3/vessels",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.body.MetaData.MMSI }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        496,
+        320
+      ],
+      "id": "0368a128-56c6-4c43-8afb-249852a2ec6e",
+      "name": "vesselLookup",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "GzzRFiN8nBdLazvB",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert maritime data analyst. Your task is to analyze a vessel based on provided data and your tools. You must use your 'vessel_lookup' and 'google_search' tools to gather information on the vessel and its location in Raja Ampat. Your final output MUST be a single, valid JSON object, and nothing else. Do not include any other text, markdown, or conversation.\n\nVessel Name: {{ $json.body.MetaData.ShipName }}\nMMSI: {{ $json.body.MetaData.MMSI }}\nLocation: {{ $json.body.MetaData.latitude }}, {{ $json.body.MetaData.longitude }}\n\n**Final Output JSON:**\n{\n  \"vesselAnalysis\": \"[A detailed summary of the vessel type and operations]\",\n  \"locationAnalysis\": \"[A summary of the vessel's location relative to protected areas]\",\n  \"riskAssessment\": \"[An insightful inference on the impact to marine life, specifically the Indo-Pacific leopard shark]\"\n}\n",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "88167416-d900-4374-bdc0-a618d914fa04",
+      "name": "Expert Maritime Data Analyst"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolSerpApi",
+      "typeVersion": 1,
+      "position": [
+        608,
+        320
+      ],
+      "id": "329f46b6-698a-4bf3-ad97-612a2d545e49",
+      "name": "web_search",
+      "credentials": {
+        "serpApi": {
+          "id": "H7leBFzGNZV6qg3f",
+          "name": "SerpAPI account"
+        }
+      },
+      "notes": "This tool can search the internet for the latest information on any topic."
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09CJ3JHNKV",
+          "mode": "list",
+          "cachedResultName": "ais-raja-ampat-marine-patrol"
+        },
+        "messageType": "block",
+        "blocksUi": "={\n  \"blocks\": [\n    {\n      \"type\": \"header\",\n      \"text\": {\n        \"type\": \"plain_text\",\n        \"text\": \"🚨 NEW VESSEL ALERT 🚨\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"fields\": [\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Vessel:* 🚢 {{ $('Webhook').first().json.body.MetaData.ShipName }} (MMSI: {{ $('Webhook').first().json.body.MetaData.MMSI }})\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Location:* {{ $('Webhook').first().json.body.MetaData.latitude }}, {{ $('Webhook').first().json.body.MetaData.longitude }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Date:* 📅 {{ new Date($('Webhook').first().json.body.MetaData.time_utc).toLocaleString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' }) }}\"\n        },\n        {\n          \"type\": \"mrkdwn\",\n          \"text\": \"*Data Source:* 📡 aisstream.io\"\n        }\n      ]\n    },\n    {\n      \"type\": \"divider\"\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Vessel Analysis:*\\n{{ $json.aiReportData.vesselAnalysis }}\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Location Analysis:*\\n{{ $json.aiReportData.locationAnalysis }}\"\n      }\n    },\n    {\n      \"type\": \"section\",\n      \"text\": {\n        \"type\": \"mrkdwn\",\n        \"text\": \"*Risk Assessment:*\\n{{ $json.aiReportData.riskAssessment }}\"\n      }\n    }\n  ]\n}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1056,
+        -80
+      ],
+      "id": "e8f457ed-3b00-4ea8-9460-123dfb7a565b",
+      "name": "Send a message",
+      "webhookId": "29ee060e-7d88-43c9-9fcf-8c49050b6961",
+      "credentials": {
+        "slackApi": {
+          "id": "mECRRS86Gqe8UXYz",
+          "name": "Slack account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 864,
+        "width": 608
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -480,
+        -288
+      ],
+      "typeVersion": 1,
+      "id": "bce7e5b9-c043-4ae6-9c0b-52c53874888a",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 864,
+        "width": 608,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        128,
+        -288
+      ],
+      "typeVersion": 1,
+      "id": "c743ce62-38fb-469f-803b-1d52de7100a4",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 864,
+        "width": 608,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        736,
+        -288
+      ],
+      "typeVersion": 1,
+      "id": "181c8ff6-a092-4970-be2f-549a435d4a57",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $('Webhook').item.json.body.MetaData.MMSI }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "cb425a8f-94a0-4148-8b03-3dfebbe3c5d2",
+      "name": "Remove Duplicates"
+    },
+    {
+      "parameters": {
+        "jsCode": "const vesselName = $('Webhook').first().json.body.MetaData.ShipName; \nconst mmsi = $('Webhook').first().json.body.MetaData.MMSI;\nconst time_utc = $('Webhook').first().json.body.MetaData.time_utc;\n\nconst rawAiReport = $('Expert Maritime Data Analyst').first().json.output;\n\nlet aiReportData = {};\nconst jsonMatch = rawAiReport.match(/```json\\n([\\s\\S]*?)\\n```/);\n\nif (jsonMatch && jsonMatch[1]) {\n  // If the AI output has the JSON code fences, we parse it\n  aiReportData = JSON.parse(jsonMatch[1]);\n} else {\n  // If not, we assume the AI outputted a clean JSON object and try to parse it directly\n  aiReportData = JSON.parse(rawAiReport);\n}\n\n\nconst projectLink = \"<a href='https://pointed-humor-a2b.notion.site/n8n-Problem-Solving-for-Marine-Conservation-256dbac1bda680e58482dda66725f87a?pvs=74'>n8n Problem Solving for Marine Conservation</a>\";\nconst Name = \"Joao Gudiño\";\n\n// NEW: Use the existing time_utc metadata and format it\nconst now = new Date(time_utc);\nconst reportDate = now.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' });\n\n// Define the data source\nconst dataSource = \"aisstream.io\";\n\nconst emailBody = `\nDear Re:shark & RARCC Team,\n<br/><br/>\nMy name is ${Name}, and I am a marine conservation enthusiast running an automated monitoring project for the Raja Ampat region. The scope of this project is to use a secure, AI-powered system to detect and report on vessel activity within designated conservation zones.\n<br/><br/>\n<b>Here is the latest alert from our system:</b> 🚨\n<br/><br/>\n<ul>\n  <li><b>Vessel:</b> 🚢 ${vesselName}</li>\n  <li><b>MMSI:</b> ⚓ ${mmsi}</li>\n  <li><b>Date:</b> 📅 ${reportDate}</li>\n  <li><b>Data Source:</b> 📡 ${dataSource}</li>\n</ul>\n<br/>\n<br/>\n<b>Vessel Analysis:</b> 📄\n<br/>\n${aiReportData.vesselAnalysis}\n<br/><br/>\n<b>Location Analysis:</b> 📍\n<br/>\n${aiReportData.locationAnalysis}\n<br/><br/>\n<b>Risk Assessment:</b> ⚠️\n<br/>\n${aiReportData.riskAssessment}\n<br/><br/>\n<br/>\nThis automation helps us monitor and alert on potential issues within the conservation area.\n<br/><br/>\nYou can learn more about the project here:\n${projectLink}\n<br/><br/>\nBest regards,\n<br/>\n${Name}\n`;\n\nreturn [{\n  json: {\n    emailBody: emailBody,\n    aiReportData: aiReportData\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        144
+      ],
+      "id": "a62000f1-4fc4-40c0-89e3-6b011677cad9",
+      "name": "Report"
+    },
+    {
+      "parameters": {
+        "content": "## Vessel Tracker & Alert System - Raja Ampat\nThis workflow is a powerful, automated system designed to monitor and report on vessel activity in a marine conservation area. It efficiently pulls real-time data, uses AI to analyze the information, and then delivers a professional, detailed report to conservation teams in the area.",
+        "height": 240,
+        "width": 336,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -480,
+        -288
+      ],
+      "typeVersion": 1,
+      "id": "9db9fc47-cecd-40ac-bb0c-996732450fce",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Data Connection\nThis stage serves as the efficient data intake for the system. It uses a webhook connection to only receive signals from a live websocket stream when a vessel enters one of the predefined conservation areas, preventing the workflow from being overwhelmed.",
+        "height": 128,
+        "width": 480
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -400,
+        176
+      ],
+      "typeVersion": 1,
+      "id": "981d7ee0-b980-461d-86e2-cbd05519b4fb",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "## Analysis & Intelligence\nActing as the brain of the workflow, this stage turns raw data into actionable intelligence. It uses a \"Remove Duplicates\" node as a memory to ensure you only get a single alert per vessel, while the AI Agent performs a multi-tool analysis to create an insightful report.",
+        "height": 128,
+        "width": 480,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        192,
+        -224
+      ],
+      "typeVersion": 1,
+      "id": "ca2f4eec-19cf-4ca2-b8c8-b77498570445",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Professional Reporting & Notification\nThis final stage is the communication hub, where the AI's analysis is transformed into a polished report. It uses a Function node to format the email and then sends the report to both a local conservation organization via Gmail and to a team channel on Slack.",
+        "height": 128,
+        "width": 480,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        800,
+        368
+      ],
+      "typeVersion": 1,
+      "id": "46587671-68c8-40d2-8e88-08a683359486",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "sendTo": "pr@stichting-rarcc.org, media@reshark.org, info@misoolfoundation.org",
+        "subject": "=🚨 Vessel Alert: {{ $('Webhook').item.json.body.MetaData.ShipName }}",
+        "message": "={{ $json.emailBody }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1056,
+        144
+      ],
+      "id": "d3e4c354-41a5-4a7a-96c6-91a960c57cca",
+      "name": "Email ReShark, Misool & RARCC",
+      "webhookId": "bca3e19c-e350-4772-b0e2-1182c64f7ecf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "2WndTYwrOvnMXCfT",
+          "name": "Gmail account"
+        }
+      },
+      "notes": "pr@stichting-rarcc.org, media@reshark.org, info@misoolfoundation.org"
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "joagc.app.n8n.cloud",
+            "user-agent": "python-requests/2.32.4",
+            "content-length": "623",
+            "accept": "*/*",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "35.196.153.26",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "US",
+            "cf-ray": "9795791ef0f6a51b-MIA",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json",
+            "x-forwarded-for": "35.196.153.26, 172.70.255.58",
+            "x-forwarded-host": "joagc.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-63-757945c69-s5cqc",
+            "x-is-trusted": "yes",
+            "x-real-ip": "35.196.153.26"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "Message": {
+              "StaticDataReport": {
+                "MessageID": 24,
+                "PartNumber": false,
+                "RepeatIndicator": 0,
+                "ReportA": {
+                  "Name": "SV FORTALEZA",
+                  "Valid": true
+                },
+                "ReportB": {
+                  "CallSign": "",
+                  "Dimension": {
+                    "A": 0,
+                    "B": 0,
+                    "C": 0,
+                    "D": 0
+                  },
+                  "FixType": 0,
+                  "ShipType": 0,
+                  "Spare": 0,
+                  "Valid": false,
+                  "VenderIDModel": 0,
+                  "VenderIDSerial": 0,
+                  "VendorIDName": ""
+                },
+                "Reserved": 0,
+                "UserID": 232040578,
+                "Valid": true
+              }
+            },
+            "MessageType": "StaticDataReport",
+            "MetaData": {
+              "MMSI": 232040578,
+              "MMSI_String": 232040578,
+              "ShipName": "SV FORTALEZA",
+              "latitude": -0.83873,
+              "longitude": 131.23980666666665,
+              "time_utc": "2025-09-03 13:07:57.28192633 +0000 UTC"
+            }
+          },
+          "webhookUrl": "https://joagc.app.n8n.cloud/webhook/85ffeef7-c116-4c02-8be8-a8f4748debbb",
+          "executionMode": "production"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Expert Maritime Data Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Vertex Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Expert Maritime Data Analyst",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "vesselLookup": {
+      "ai_tool": [
+        [
+          {
+            "node": "Expert Maritime Data Analyst",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "web_search": {
+      "ai_tool": [
+        [
+          {
+            "node": "Expert Maritime Data Analyst",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expert Maritime Data Analyst": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report": {
+      "main": [
+        [
+          {
+            "node": "Email ReShark, Misool & RARCC",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email ReShark, Misool & RARCC": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "a7b51ffb-6577-4921-815c-ce95a75d45db",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "54a744b141db732434672e7115ceedac423eccaf9fb4261bc6abb827b92408a5"
+  },
+  "id": "ag5R47MD3TFcS3jB",
+  "tags": []
+}
