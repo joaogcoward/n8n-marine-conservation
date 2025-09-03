@@ -1,5 +1,5 @@
 ### **The Problem 🚧**
-Manually tracking vessel movements in marine conservation areas is crucial for organizations like Re:shark & RARCC, but it's time-consuming and inefficient. Manually tracking multiple AIS signals, analyzing vessel details, assessing potential risks to local marine life (like the Indo-Pacific leopard shark), and generating reports drains valuable time that could be spent on fieldwork and strategy.
+Manually tracking vessel movements in marine conservation areas is crucial for mission-driven organizations like Re:shark & RARCC. Inspired by the article [Can we undo extinction? A growing effort to restore lost sharks](https://news.mongabay.com/short-article/2025/08/can-we-undo-extinction-a-growing-effort-to-restore-lost-sharks/), this project tackles the time-consuming and inefficient process of manually tracking multiple AIS signals, analyzing vessel details, assessing potential risks to local marine life, and generating reports. This drains valuable time that could be spent on fieldwork and strategy.
 
 ### **The Solution ✨**
 Over the course of this project, I designed and built an end-to-end automation workflow to solve this problem. Using n8n, a powerful low-code platform, I created a system that automatically:
@@ -25,6 +25,8 @@ The project was built with a focus on robustness, scalability, and ease of maint
 
 ### **Limitations and Scalability 📈**
 While effective for its current scope, this workflow can be built upon to handle enterprise-level needs.
+
+* **Inherent Limitation:** The workflow cannot detect vessels that are not streaming AIS data, such as those engaged in illegal activities
 
 * **Current Limitations:** The workflow relies on a Python script to be running to provide the AIS data stream, which introduces a point of failure. It is also limited to one data source.
 
