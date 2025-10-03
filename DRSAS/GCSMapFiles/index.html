@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simplified Ocean Current Forecast</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="./leaflet.css" />
+    <script src="./leaflet.js"></script>
+    
+    <link rel="stylesheet" href="./MarkerCluster.css" />
+    <link rel="stylesheet" href="./MarkerCluster.Default.css" /> 
+    <script src="./leaflet.markercluster.js"></script> 
+
+    <style>
+        #map { height: 600px; width: 100%; }
+    </style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script>
+    // 1. Initialize Map
+    var map = L.map('map', {
+        zoom: 10,
+        center: [9.7, -83.0]
+    }); 
+
+    // 2. Add Base Map Tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // 3. THE PUBLIC GEOJSON URL (Ensure this is the aggregated file!)
+    const geoJsonUrl = 'https://storage.googleapis.com/my-ocean-map-data-2025/latest_forecast.geojson';
+
+    // 4. Create a Marker Cluster Group
+    const clusterGroup = L.markerClusterGroup();
+
+    // 5. Load the GeoJSON Data from the URL
+    fetch(geoJsonUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Could not load GeoJSON file from GCS.');
+            }
+            return response.json();
+        })
+        .then(data => {
+            
+            // 6. Create the GeoJSON Layer
+            const geoJsonLayer = L.geoJson(data, {
+                // Style points based on the pre-calculated 'point_risk' property
+                pointToLayer: function (feature, latlng) {
+                    const riskLevel = feature.properties.point_risk;
+                    let color = 'blue';
+
+                    if (riskLevel === 'Medium') {
+                        color = 'orange';
+                    } else if (riskLevel === 'High') {
+                        color = 'red';
+                    }
+
+                    return L.circleMarker(latlng, {
+                        radius: 5,
+                        fillColor: color,
+                        color: "#000",
+                        weight: 1,
+                        opacity: 0.7,
+                        fillOpacity: 0.8
+                    });
+                },
+                
+                // FINAL FIX: Explicitly open/close tooltip on mouse events
+                onEachFeature: function (feature, layer) {
+                    if (feature.properties) {
+                        // Construct the HTML content for the tooltip
+                        const tooltipContent = 
+                            `<b>Location:</b> ${feature.properties.location}<br>` +
+                            `<b>Date:</b> ${feature.properties.time}<br>` + 
+                            `<b>Speed (m/s):</b> ${feature.properties.current_speed_ms}<br>` +
+                            `<b>Risk Level:</b> ${feature.properties.point_risk}`;
+
+                        // Bind the tooltip to the layer
+                        layer.bindTooltip(tooltipContent, {
+                            permanent: false, // Show only on hover
+                            direction: 'auto',
+                            sticky: true
+                        });
+
+                        // **The New Fix:** Force the tooltip to open/close explicitly
+                        layer.on('mouseover', function () {
+                            layer.openTooltip();
+                        });
+                        layer.on('mouseout', function () {
+                            layer.closeTooltip();
+                        });
+                    }
+                }
+            });
+
+            // 7. Add the GeoJSON layer to the Cluster Group
+            clusterGroup.addLayer(geoJsonLayer);
+
+            // 8. Add the Cluster Group to the Map (This single step adds everything to the map)
+            clusterGroup.addTo(map);
+
+        })
+        .catch(error => {
+            console.error('Error loading GeoJSON:', error);
+            alert('Map data loading failed. See console for details.');
+        });
+</script>
+
+</body>
+</html>
