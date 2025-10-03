@@ -1,6 +1,8 @@
 ### **The Problem 🚧**
 Manually tracking vessel movements in marine conservation areas is crucial for mission-driven organizations like ReShark & RARCC. Inspired by the article [Can we undo extinction? A growing effort to restore lost sharks](https://news.mongabay.com/short-article/2025/08/can-we-undo-extinction-a-growing-effort-to-restore-lost-sharks/), this project tackles the time-consuming and inefficient process of manually tracking multiple AIS signals, analyzing vessel details, assessing potential risks to local marine life, and generating reports. This drains valuable time that could be spent on fieldwork and strategy.
 
+---
+
 ### **The Solution ✨**
 Over the course of this project, I designed and built an end-to-end automation workflow to solve this problem. Using n8n, a powerful low-code platform, I created a system that automatically:
 
@@ -14,6 +16,15 @@ Over the course of this project, I designed and built an end-to-end automation w
 
 The project was built with a focus on robustness, scalability, and ease of maintenance. All of the process, assumptions, and findings are being documented in Notion and GitHub 📝, and I would be happy to share the JSON automation file if required.
 
+---
+
+### **Source Code & Repositories 💻**
+The real-time data ingestion for this system is managed by a separate service to handle the continuous AIS stream.
+
+[Websocket Python Script](https://github.com/joaogcoward/n8n-marine-conservation/tree/main/VTAS/Websocket): Contains the Python script responsible for maintaining the persistent connection to the AIS data provider via a Websocket. This client filters the stream and posts relevant messages directly to the n8n webhook, acting as the system's entry point for real-time data.
+
+---
+
 ### **The Real Impact 🚀**
 * **100% Automation:** Eliminated the need for manual vessel tracking and reporting, saving significant time for the conservation team.
 
@@ -22,6 +33,8 @@ The project was built with a focus on robustness, scalability, and ease of maint
 * **Reliable Reporting:** The workflow’s robust error handling means there are no silent failures. The team is always informed of vessel activity.
 
 * **Proof of Concept:** This project is a tangible demonstration of how automation can support a core mission, in this case, empowering a conservation team with continuous, clean, and reliable data for monitoring and intervention.
+
+---
 
 ### **Limitations and Scalability 📈**
 While effective for its current scope, this workflow can be built upon to handle enterprise level needs.
