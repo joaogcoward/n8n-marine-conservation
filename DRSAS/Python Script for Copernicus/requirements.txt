@@ -1,8 +1,0 @@
-papermill
-google-auth
-google-api-python-client
-ipykernel
-gunicorn
-Flask
-xarray
-pandas
