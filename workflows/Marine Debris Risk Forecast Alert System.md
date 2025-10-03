@@ -1,6 +1,8 @@
 ### **The Problem 🚧**
 Manually analyzing complex oceanographic forecast data and determining the potential risk of floating debris is time-consuming and prone to human error. Without an automated system, mission-driven organizations (like those focused on coastal conservation) have slow response times and waste valuable fieldwork time manually aggregating multi-day, multi-point data from sources like Copernicus. This drains resources that could be spent on fieldwork and strategy.
 
+---
+
 ### **The Solution ✨**
 Over the course of this project, I designed and built an end-to-end automation workflow using a low-code platform. This system, which we call the Marine Debris Risk Forecast Alert System, automatically:
 
@@ -33,6 +35,8 @@ The functional logic of this system is split between the low-code workflow platf
 * **Proactive Intervention:** The Dynamic Subject Line provides conditional alerting, guaranteeing immediate attention when critical conditions are met.
 
 * **System Robustness:** The GCS Retry Logic ensures the interactive forecast map link in the report is always live and up-to-date, preventing broken links and silent failures.
+
+---
 
 ### **Limitations and Scalability 📈**
 * **Inherent Limitation:** The workflow relies exclusively on ocean current forecast data and cannot account for real-time pollution events or debris sources outside the oceanic model's scope.
