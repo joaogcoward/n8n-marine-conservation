@@ -1,0 +1,476 @@
+{
+  "name": "Marine Debris Risk Forecast Alert System",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"beaches\": [\n    {\n      \"location\": \"Playa Blanca, Cahuita\",\n      \"latitude\": 9.7613,\n      \"longitude\": -82.8369,\n      \"pollution_level\": \"Medium\"\n    },\n    {\n      \"location\": \"Tortuguero\", \n      \"latitude\": 10.5411, \n      \"longitude\": -83.4850, \n      \"pollution_level\": \"Medium\" \n    },\n    {\n      \"location\": \"Playa Manzanillo\",\n      \"latitude\": 9.6267,\n      \"longitude\": -82.6455,\n      \"pollution_level\": \"Low\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        272,
+        0
+      ],
+      "id": "35c6e1cc-9810-4b18-93eb-8321aa1b4cc0",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://papermill-runner-648509641229.europe-west1.run.app",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"start_date\": \"{{ new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().slice(0, 10) }}\",\n  \"end_date\": \"{{ new Date(new Date().setDate(new Date().getDate() + 10)).toISOString().slice(0, 10) }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        576,
+        0
+      ],
+      "id": "9b558bb5-3333-4acf-8bd5-762a9d2295a0",
+      "name": "HTTP Request - Current Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=**YOUR RESPONSE MUST BE A SINGLE, VALID JSON OBJECT AND NOTHING ELSE.**\n\nYou are an expert maritime data analyst. Your task is to analyze the provided daily aggregated ocean current forecast data for the beach named **{{ $json.beachName }}**. Your primary goal is to assess the potential for **floating debris and pollution impact** based on the 9-day forecast.\n\n**Input Data (Daily Aggregated Forecast Table for {{ $json.beachName }}):**\n{{ JSON.stringify($json.forecastTable) }} 👈 **FIXED: This ensures the AI gets readable JSON data.**\n\n**Analysis Instructions:**\n- **Risk Calculation:** **FIRST**, count the total number of 'High' days and 'Medium' days in the `point_risk` column.\n- **Risk Level:** **THEN**, determine a single, overall risk level for the **entire 9-day forecast period** ('High', 'Medium', or 'Low') for this specific beach. Use these strict rules, prioritizing High over Medium:\n    - **High Risk:** If the count of 'High' days is $\\ge 2$.\n    - **Medium Risk:** If the 'High' condition is not met, but the count of 'Medium' days is $\\ge 2$.\n    - **Low Risk:** If neither of the above conditions is met (i.e., less than two Medium and less than two High days).\n- **Risk Summary (Max 2 Sentences):** Provide a concise summary of the overall implication for floating debris risk for this beach.\n- **Pollution Impact (Max 3 Sentences):** Provide a clear inference on how the forecasted median speeds and risks will affect the potential for accumulated debris or visible pollution on **{{ $json.beachName }}**.\n- **Include Forecast Table:** You MUST include the full forecast table from the input in the final JSON output under the key \"forecastTable\".\n\n**Final Output JSON:**\n{\n  \"beachName\": \"🌊 {{ $json.beachName }} Forecast 🏖️\",\n  \"riskCounts\": {\n    \"high\": \"[Number of High days]\",\n    \"medium\": \"[Number of Medium days]\"\n  },\n  \"riskLevel\": \"[A single word: 'High', 'Medium', or 'Low' PLUS an associated emoji (e.g., 'High 🚨', 'Medium 🟠', 'Low 🟢').]\",\n  \"riskSummary\": \"[A one- to two-sentence summary of the forecast and debris risk.]\",\n  \"pollutionImpact\": \"[A two- to three-sentence summary of the pollution impact.]\",\n  \"forecastTable\": \"[The full original forecast table.]\"\n}\n\n**YOUR RESPONSE MUST BE A SINGLE, VALID JSON OBJECT AND NOTHING ELSE.**",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1392,
+        -144
+      ],
+      "id": "51697635-ce72-4fe0-a75c-90504f6deddd",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "projectId": {
+          "__rl": true,
+          "value": "gen-lang-client-0563035104",
+          "mode": "list",
+          "cachedResultName": "Gemini API"
+        },
+        "modelName": "gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleVertex",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        80
+      ],
+      "id": "51fe87c5-a1aa-496d-bfd9-8ed5733fd6b0",
+      "name": "Google Vertex Chat Model",
+      "credentials": {
+        "googleApi": {
+          "id": "GLJnxUhspkFiUw5v",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all the outputs from the AI Agent node.\nconst aiOutputs = $('AI Agent').all();\n\n// **TODO: UPDATE THIS URL WITH YOUR ACTUAL PUBLIC GCS MAP LINK**\nconst mapUrl = \"https://storage.googleapis.com/my-ocean-map-data-2025/index.html\"; \n\n// Create an array to hold the parsed JSON for each beach.\nconst parsedReports = [];\n\n// Loop through each output item from the AI Agent.\naiOutputs.forEach(aiOutput => {\n  const rawAiReport = aiOutput.json.output;\n  let aiReportData = {};\n  \n  // *** DEFINITIVE ROBUST JSON EXTRACTION LOGIC ***\n  let jsonString = rawAiReport;\n\n  // 1. Find the index of the very first '{'\n  const start = jsonString.indexOf('{');\n  // 2. Find the index of the very last '}'\n  const end = jsonString.lastIndexOf('}');\n\n  if (start !== -1 && end !== -1 && end > start) {\n      // 3. Slice the string to contain only the content from the first '{' to the last '}'\n      jsonString = jsonString.substring(start, end + 1);\n      jsonString = jsonString.trim();\n  } else {\n      jsonString = rawAiReport;\n  }\n  \n  try {\n      // Attempt to parse the cleaned string\n      aiReportData = JSON.parse(jsonString);\n  } catch (e) {\n      console.error(\"Failed to parse JSON string:\", jsonString);\n      aiReportData = createErrorObject(rawAiReport);\n  }\n  // *** END DEFINITIVE LOGIC ***\n  \n  parsedReports.push(aiReportData);\n});\n\n// A helper function to create a standardized error report.\nfunction createErrorObject(rawOutput) {\n  const nameMatch = rawOutput.match(/\"beachName\": \"(.*?)\"/);\n  const beachName = nameMatch ? nameMatch[1].replace(/🌊|🏖️/g, '').trim() : \"Unknown Beach\";\n  \n  return {\n    beachName: beachName,\n    riskLevel: \"Undefined ❓\",\n    riskSummary: \"Analysis could not be performed due to an error. Check the AI Agent output.\",\n    pollutionImpact: \"\"\n  };\n}\n\n// A helper function to format a single report row for the HTML table.\nfunction formatReportRow(report) {\n  let rowColor = 'white';\n  // Check for the word 'High' or 'Medium' in the riskLevel string.\n  if (report.riskLevel && report.riskLevel.includes('High')) {\n    rowColor = '#fcdbda'; // Light Red\n  } else if (report.riskLevel && report.riskLevel.includes('Medium')) {\n    rowColor = '#fff7e0'; // Light Orange\n  }\n  \n  return `\n    <tr style=\"background-color:${rowColor};\">\n      <td>${report.beachName}</td>\n      <td><b>${report.riskLevel}</b></td>\n      <td>${report.riskSummary}</td>\n      <td>${report.pollutionImpact}</td>\n    </tr>\n  `;\n}\n\n// *** FINAL ALERT LOGIC ***\n\n// Use the .some() array method to check if ANY report has 'High' risk.\nconst isUrgentAlert = parsedReports.some(report => report.riskLevel.includes('High'));\n\n// Set the dynamic email subject line.\nconst emailSubject = isUrgentAlert \n  ? '🚨 URGENT ALERT: HIGH DEBRIS RISK DETECTED 🚨' \n  : '✅ Debris Risk Forecast: All Clear or Moderate Risk';\n  \n// *** END FINAL ALERT LOGIC ***\n\n\n// Now, format the final email body using the parsed reports.\nconst tableRowsHtml = parsedReports.map(formatReportRow).join('');\n\n// Define your report metadata.\nconst Name = \"Joao Gudiño Coward\"; \nconst now = new Date();\nconst reportDate = now.toLocaleString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZoneName: 'short' });\nconst dataSource = \"Copernicus Global Ocean Physics Analysis and Forecast\";\nconst dataLink = \"https://data.marine.copernicus.eu/product/GLOBAL_ANALYSISFORECAST_PHY_001_024/description\";\nconst projectLinkHtml = `<a href=\"${mapUrl}\" target=\"_blank\">View Live Interactive Forecast Map</a>`;\n\nconst emailBody = `\nDear Team,\n<br/><br/>\nMy name is ${Name}, and I am running an automated monitoring workflow for marine conservation areas of the carribean coast of Costa Rica.\n<br/><br/>\nOur system dynamically tracks and forecasts the trajectory of floating plastic pollution by integrating an AI-driven predictive model with daily aggregated data. This allows for proactive alerts to mitigate potential harm to critical coastal habitats.\n<br/><br/>\n<b>Here is the latest current speed and debris risk forecast for conservation areas:</b> 🚨\n<br/><br/>\n<ul>\n  <li><b>Data Source:</b> 📡 <a href=\"${dataLink}\" target=\"_blank\">${dataSource}</a></li>\n  <li><b>Report Date:</b> 📅 ${reportDate}</li>\n</ul>\n<br/>\n<table border=\"1\" cellpadding=\"5\" cellspacing=\"0\" style=\"width:100%; border-collapse: collapse; font-size: 14px;\">\n  <thead>\n    <tr style=\"background-color:#d4e6f1;\">\n      <th style=\"width: 20%;\">Beach</th>\n      <th style=\"width: 15%;\">Overall Risk</th>\n      <th style=\"width: 35%;\">Summary</th>\n      <th style=\"width: 30%;\">Pollution Impact</th>\n    </tr>\n  </thead>\n  <tbody>\n    ${tableRowsHtml}\n  </tbody>\n</table>\n<br/><br/>\nYou can see the current risk zones and explore the 9-day forecast in detail here:\n${projectLinkHtml}\n<br/><br/>\nBest regards,\n<br/>\nThe ${Name}\n`;\n\nreturn [{\n  json: {\n    emailBody: emailBody,\n    // Provide the subject line for the next node\n    emailSubject: emailSubject,\n    reports: parsedReports\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1936,
+        -144
+      ],
+      "id": "e17d23f2-9d3d-4624-8613-d2ab6f1774f7",
+      "name": "Report"
+    },
+    {
+      "parameters": {
+        "sendTo": "joaogudino@gmail.com, jpvz97@gmail.com",
+        "subject": "={{ $json.emailSubject }}",
+        "message": "={{ $json.emailBody }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2208,
+        -144
+      ],
+      "id": "000dec45-07c6-45d3-ae99-423c88e0a7ff",
+      "name": "Send a message",
+      "webhookId": "021f89e2-26c4-49bb-966f-81458644cd1f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "2WndTYwrOvnMXCfT",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Helper function to calculate the median of an array of numbers\nconst calculateMedian = (arr) => {\n    if (!arr || arr.length === 0) return 0;\n    const sorted = arr.slice().sort((a, b) => a - b);\n    const middle = Math.floor(sorted.length / 2);\n\n    if (sorted.length % 2 === 0) {\n        // Even number of elements: average the two middle values\n        return (sorted[middle - 1] + sorted[middle]) / 2;\n    } else {\n        // Odd number of elements: return the middle value\n        return sorted[middle];\n    }\n};\n\n// Helper function to calculate the mode (most frequent) of an array of strings\nconst calculateMode = (arr) => {\n    if (!arr || arr.length === 0) return 'Low'; // Default to Low if no data\n    const frequency = {};\n    let maxCount = 0;\n    let mode = '';\n\n    for (const item of arr) {\n        frequency[item] = (frequency[item] || 0) + 1;\n        if (frequency[item] > maxCount) {\n            maxCount = frequency[item];\n            mode = item;\n        }\n    }\n    return mode;\n};\n\n// Function to aggressively clean string coordinates before conversion\nconst cleanParseFloat = (value) => {\n    if (typeof value === 'number') return value;\n    if (typeof value !== 'string') return NaN;\n    \n    // Aggressively clean the string: remove all characters EXCEPT digits, '.', and '-'\n    const cleanedString = value.replace(/[^0-9.-]/g, '');\n    \n    // Now attempt to parse the cleaned string\n    return parseFloat(cleanedString);\n};\n\n// ---------------------------------------------------------------------------------\n\n// Step 1: Clean, Validate, and Group the Data\nconst rawDataItems = $input.all().flatMap(item => item.json.data || []);\nconst groupedData = {};\n\nrawDataItems\n    .map(item => {\n        // We assume the input structure has \"time\" property for date extraction.\n        let lat = cleanParseFloat(item.latitude);\n        let lon = cleanParseFloat(item.longitude);\n        // Ensure current_speed is parsed as a number for calculations\n        let speed = cleanParseFloat(item.current_speed);\n\n        return {\n            ...item,\n            latitude: lat,\n            longitude: lon,\n            current_speed: speed\n        };\n    })\n    .filter(item =>\n        // Filter out records where lat, lon, or speed are invalid\n        !isNaN(item.latitude) && \n        !isNaN(item.longitude) &&\n        !isNaN(item.current_speed)\n    )\n    .forEach(item => {\n        // Create a unique key using the location and the DATE part of the time\n        // Since your sample input shows 'time': '2025-10-03' (no hours), we use the full string.\n        const datePart = item.time.substring(0, 10); \n        const key = `${item.location}-${datePart}`;\n\n        if (!groupedData[key]) {\n            // Initialize the group with the first valid static data and arrays for aggregation\n            groupedData[key] = {\n                location: item.location,\n                time: datePart, // Use only the date part for the final feature\n                latitude: item.latitude, // Use this for the final point location\n                longitude: item.longitude, // Use this for the final point location\n                speeds: [],\n                risks: []\n            };\n        }\n        \n        // Populate arrays for aggregation\n        groupedData[key].speeds.push(item.current_speed);\n        \n        // Recalculate risk on the fly to match map logic\n        const risk = (item.current_speed > 0.25) ? \"High\" : (item.current_speed > 0.15) ? \"Medium\" : \"Low\";\n        groupedData[key].risks.push(risk);\n    });\n\n// Step 2: Aggregate the Grouped Data into GeoJSON Features\nconst aggregatedFeatures = Object.values(groupedData).map(group => {\n    // Calculate final aggregated values\n    const medianSpeed = calculateMedian(group.speeds);\n    const modeRisk = calculateMode(group.risks);\n\n    return {\n        \"type\": \"Feature\",\n        \"geometry\": {\n            \"type\": \"Point\",\n            \"coordinates\": [group.longitude, group.latitude] \n        },\n        \"properties\": {\n            \"location\": group.location,\n            \"time\": group.time, \n            \"current_speed_ms\": medianSpeed.toFixed(4),\n            \"point_risk\": modeRisk\n            // uo and vo are intentionally dropped as they are hard to aggregate meaningfully\n        }\n    };\n});\n\n// Convert the aggregated data items into a GeoJSON FeatureCollection\nconst geoJsonOutput = {\n    \"type\": \"FeatureCollection\",\n    \"features\": aggregatedFeatures\n};\n\n// ------------------------------------------------------------------\n// Step 3: Convert to Binary Output for Workflow Return\n// ------------------------------------------------------------------\n\n// 1. Convert the GeoJSON object into a JSON string\nconst geoJsonString = JSON.stringify(geoJsonOutput);\n\n// 2. Convert the string into a Base64 encoded string\n// NOTE: Assuming 'Buffer' is available in your execution environment\nconst geoJsonBase64 = Buffer.from(geoJsonString).toString('base64');\n\n// 3. Return a single item that contains the file's binary properties\nreturn [{\n    json: { message: `GeoJSON successfully aggregated to ${aggregatedFeatures.length} daily points.` },\n    binary: {\n        geojsonFile: {\n            data: geoJsonBase64,\n            mimeType: 'application/geo+json',\n            // IMPORTANT: The map code in index.html is still looking for 'latest_forecast.geojson'.\n            // If you change this name, you must also update the map code!\n            fileName: 'latest_forecast.geojson'\n        }\n    }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        928,
+        560
+      ],
+      "id": "862dc205-24de-4471-a3a4-f2970dd67e36",
+      "name": "GeoJSON"
+    },
+    {
+      "parameters": {
+        "resource": "object",
+        "operation": "create",
+        "bucketName": "my-ocean-map-data-2025",
+        "objectName": "latest_forecast.geojson",
+        "createBinaryPropertyName": "=geojsonFile",
+        "createData": {
+          "acl": "\"public-read\""
+        },
+        "createQuery": {},
+        "encryptionHeaders": {},
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.googleCloudStorage",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        560
+      ],
+      "id": "ccbf9a05-58c4-454a-bc34-e1f8fef59ea2",
+      "name": "Create an object",
+      "retryOnFail": true,
+      "executeOnce": false,
+      "waitBetweenTries": 5,
+      "credentials": {
+        "googleCloudStorageOAuth2Api": {
+          "id": "7frSthOb7rwA73wS",
+          "name": "Google Cloud Storage account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "56aa9d97-3bd9-4019-a0f1-66ac9ff29573",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 1664,
+        "width": 944
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -128,
+        -496
+      ],
+      "typeVersion": 1,
+      "id": "62a6c4d8-8a80-48e0-999c-cddfd0ed4cc5",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 784,
+        "width": 944,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        816,
+        384
+      ],
+      "typeVersion": 1,
+      "id": "0a638e40-c94e-454f-b490-6a941a638e48",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 880,
+        "width": 496,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1264,
+        -496
+      ],
+      "typeVersion": 1,
+      "id": "82869ad4-5359-4b94-aa3e-62e3e698acd0",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 1664,
+        "width": 672,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1760,
+        -496
+      ],
+      "typeVersion": 1,
+      "id": "2b7393f8-c6a2-448a-a61d-7cbe531a36f3",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Data Ingestion: The Source 🌊\nInstead of a simple HTTP request, the workflow utilizes Papermill to run a specific Colab notebook as a job on a Google Cloud Run service. This allows the system to handle complex API authentication, large data downloads, and data cleansing outside of the primary workflow engine, ensuring the next node receives only the finalized GeoJSON data.",
+        "width": 640
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        32,
+        336
+      ],
+      "typeVersion": 1,
+      "id": "39d72fd0-a113-4da0-8647-2d7c0cc7a13f",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "## Map Generation: The Visualization 🗺️\n\nThis uses the final GeoJSON data and a \"Create Object in GCS\" node. We increased its reliability by enabling \"Retry on Fail\", protecting the workflow from temporary cloud storage outages or slowdowns.",
+        "height": 144,
+        "width": 656,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        976,
+        768
+      ],
+      "typeVersion": 1,
+      "id": "eff241ff-4cf3-4f32-a5fb-d0e572c0d951",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 880,
+        "width": 464,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        816,
+        -496
+      ],
+      "typeVersion": 1,
+      "id": "f2da1a6c-0770-426a-893c-be05f705b453",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "## Data Aggregation: The Pre-Processing 📊\n\nThis stage takes the large, raw stream of granular forecast points and statistically summarizes them into a single, comprehensive 9-day table for each conservation area.\n",
+        "height": 240,
+        "width": 336,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        880,
+        112
+      ],
+      "typeVersion": 1,
+      "id": "f0b5519e-5a53-445e-b059-516c3292b426",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Helper function to calculate the median of an array of numbers\nconst calculateMedian = (arr) => {\n    if (!arr || arr.length === 0) return 0;\n    const sorted = arr.slice().sort((a, b) => a - b);\n    const middle = Math.floor(sorted.length / 2);\n\n    if (sorted.length % 2 === 0) {\n        return (sorted[middle - 1] + sorted[middle]) / 2;\n    } else {\n        return sorted[middle];\n    }\n};\n\n// Helper function to calculate the mode (most frequent) of an array of strings\nconst calculateMode = (arr) => {\n    if (!arr || arr.length === 0) return 'Low';\n    const frequency = {};\n    let maxCount = 0;\n    let mode = '';\n\n    for (const item of arr) {\n        frequency[item] = (frequency[item] || 0) + 1;\n        if (frequency[item] > maxCount) {\n            maxCount = frequency[item];\n            mode = item;\n        }\n    }\n    return mode;\n};\n\n// --------------------- AGGREGATION PHASE -------------------------\n\n// Accesses the array of data points from the first input item\nconst rawDataItems = $input.first().json.data || [];\nconst groupedData = {};\n\n// Step 1: Group the raw data by Location and Date\nrawDataItems\n    .forEach(item => {\n        const speed = parseFloat(item.current_speed);\n        // We only need basic validation now\n        if (isNaN(speed) || !item.location || !item.time) {\n            return;\n        }\n\n        const datePart = item.time.substring(0, 10);\n        const key = `${item.location}-${datePart}`;\n\n        if (!groupedData[key]) {\n            groupedData[key] = {\n                location: item.location,\n                time: datePart,\n                speeds: [],\n                risks: []\n            };\n        }\n        \n        const risk = (speed > 0.25) ? \"High\" : (speed > 0.15) ? \"Medium\" : \"Low\";\n        groupedData[key].speeds.push(speed);\n        groupedData[key].risks.push(risk);\n    });\n\n// Step 2: Aggregate the Grouped Data into a clean analysis array (27 objects)\nconst aggregatedAnalysisData = Object.values(groupedData).map(group => {\n    const medianSpeed = calculateMedian(group.speeds);\n    const modeRisk = calculateMode(group.risks);\n\n    return {\n        // This array of objects is the input for the splitting logic below\n        \"location\": group.location,\n        \"time\": group.time,\n        \"current_speed_ms\": medianSpeed.toFixed(4),\n        \"point_risk\": modeRisk\n    };\n});\n\n// --------------------- SPLITTING PHASE -------------------------\n\n// Step 3: Group the 27 aggregated records by location (beach)\nconst groupedByBeach = aggregatedAnalysisData.reduce((accumulator, currentItem) => {\n    const location = currentItem.location;\n    \n    if (!accumulator[location]) {\n        accumulator[location] = [];\n    }\n    \n    accumulator[location].push(currentItem);\n    \n    return accumulator;\n}, {}); \n\n// Step 4: Convert the grouped object into an array of output items\n// This creates 3 separate items for the AI Agent node.\nconst outputItems = Object.entries(groupedByBeach).map(([beachName, forecastTable]) => {\n    return {\n        json: {\n            // These keys match your AI Agent prompt placeholders: {{ $json.beachName }}\n            beachName: beachName, \n            // This key matches your AI Agent prompt input: {{ $json.forecastTable }}\n            forecastTable: forecastTable \n        }\n    };\n});\n\n// Return the 3 items, one for each beach.\nreturn outputItems;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        976,
+        -144
+      ],
+      "id": "bb63f950-ca30-42be-b968-d5e606bd3d6f",
+      "name": "Data Aggregation"
+    },
+    {
+      "parameters": {
+        "content": "## AI-Driven Analysis: The Intelligence 🧠\n\nApplies the complex risk rules and translates the data into human-readable insights.\n\n\nThe riskCounts field forces the AI to show its math, preventing logic errors.\n\nWe used {{ JSON.stringify($json.forecastTable) }} to ensure the AI could actually read the input data.",
+        "height": 320,
+        "width": 336,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1344,
+        -480
+      ],
+      "typeVersion": 1,
+      "id": "1a1cd9fd-d920-436e-929d-00d7675b645a",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "content": "## Proactive Reporting: The Alert System 🚨\nWhat it does: Assembles the final email and determines the urgency level.In the final Code node, we generated the entire HTML body, but most critically, we used the powerful .some() JavaScript method to check if any of the reports had a riskLevel of \"High,\" enabling the dynamic \"🚨 URGENT ALERT\" subject line for immediate stakeholder action.",
+        "height": 240,
+        "width": 336,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1952,
+        96
+      ],
+      "typeVersion": 1,
+      "id": "d1bae768-be0a-43d8-a04b-062f127f40f6",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "content": "## Marine Debris Risk Forecast Alert System\nThis workflow is a powerful, automated system designed to monitor and report on vessel activity in a marine conservation area. It efficiently pulls real-time data, uses AI to analyze the information, and then delivers a professional, detailed report to conservation teams in the area.",
+        "height": 224,
+        "width": 496,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -128,
+        -496
+      ],
+      "typeVersion": 1,
+      "id": "dbd8ddaf-cfe4-4009-b63d-2c99da3363f7",
+      "name": "Sticky Note4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Current Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request - Current Data": {
+      "main": [
+        [
+          {
+            "node": "GeoJSON",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Data Aggregation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Vertex Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GeoJSON": {
+      "main": [
+        [
+          {
+            "node": "Create an object",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Aggregation": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f6811124-b6a4-4940-8bc9-7234f9d86323",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "54a744b141db732434672e7115ceedac423eccaf9fb4261bc6abb827b92408a5"
+  },
+  "id": "ss3xtpLjLhcNplBv",
+  "tags": []
+}
