@@ -12,9 +12,9 @@ This is a open source project where I design and share automation workflows with
 
 ## 🚀 Workflows
 
-- [Marine Conservation Intelligence Hub](https://github.com/joaogcoward/n8n-marine-conservation/blob/main/workflows/Marine%20Conservation%20Intelligence%20Hub.json) → [Read more here](https://github.com/joaogcoward/n8n-marine-conservation/blob/328166d3bb8492dd982edc3ed238a8c8c0f2bdd7/workflows/%20Marine%20Conservation%20Intelligence%20Hub.md)
+- [Marine Conservation Intelligence Hub](https://github.com/joaogcoward/n8n-marine-conservation/blob/main/workflows/Marine%20Conservation%20Intelligence%20Hub.json) → [Read more here](https://github.com/joaogcoward/n8n-marine-conservation/blob/main/workflows/%20Marine%20Conservation%20Intelligence%20Hub.md)
   
-- [Vessel Tracker & Alert System](https://github.com/joaogcoward/n8n-marine-conservation/blob/50aff3ce03e707742fc8ba5b806b4efdaa7b4641/workflows/Vessel%20Tracker%20%26%20Alert%20System.json) → [Read more here](https://github.com/joaogcoward/n8n-marine-conservation/blob/328166d3bb8492dd982edc3ed238a8c8c0f2bdd7/workflows/Vessel%20Tracker%20%26%20Alert%20System.md)
+- [Vessel Tracker & Alert System](https://github.com/joaogcoward/n8n-marine-conservation/blob/50aff3ce03e707742fc8ba5b806b4efdaa7b4641/workflows/Vessel%20Tracker%20%26%20Alert%20System.json) → [Read more here](https://github.com/joaogcoward/n8n-marine-conservation/blob/main/workflows/Vessel%20Tracker%20%26%20Alert%20System.md)
 
 - [Marine Debris Risk Forecast Alert System](https://github.com/joaogcoward/n8n-marine-conservation/blob/main/workflows/Marine%20Debris%20Risk%20Forecast%20Alert%20System.json)→ [Read more here](https://github.com/joaogcoward/n8n-marine-conservation/blob/main/workflows/Marine%20Debris%20Risk%20Forecast%20Alert%20System.md)
 
