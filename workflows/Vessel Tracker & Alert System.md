@@ -21,7 +21,7 @@ The project was built with a focus on robustness, scalability, and ease of maint
 ### **Source Code & Repositories 💻**
 The real-time data ingestion for this system is managed by a separate service to handle the continuous AIS stream.
 
-[Websocket Python Script]([https://github.com/joaogcoward/n8n-marine-conservation/tree/main/VTAS/Websocket](https://github.com/joaogcoward/n8n-marine-conservation/blob/main/VTAS/WebSocket_connection_to_aisstreamio.ipynb)): Contains the Python script responsible for maintaining the persistent connection to the AIS data provider via a Websocket. This client filters the stream and posts relevant messages directly to the n8n webhook, acting as the system's entry point for real-time data.
+[Websocket Python Script]([https://github.com/joaogcoward/n8n-marine-conservation/tree/main/VTAS/Websocket](https://github.com/joaogcoward/n8n-marine-conservation/blob/main/VTAS/WebSocket_connection_to_aisstreamio.ipynb): Contains the Python script responsible for maintaining the persistent connection to the AIS data provider via a Websocket. This client filters the stream and posts relevant messages directly to the n8n webhook, acting as the system's entry point for real-time data.
 
 ---
 
